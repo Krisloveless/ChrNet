@@ -15,19 +15,19 @@ The default output cell types are:
 "Dendritic cell", "NK cell", "B cell", "CD4 T cell", "CD8 T cell", "CD14+ monocyte" and  "Other".
 
 ### file struct
-.
-├── data.py                  
-├── **dataset**
-│   ├── testing_tpm.tsv
-│   └── training_tpm.tsv
-├── front.png
-├── main.py
-├── model.py
-├── **pre_trained**
-│   └── ChrNet.hdf5
-├── README.md
-└── **reference**
-    └── hg19.sorted.bed
+.<br />
+├── data.py    <br />              
+├── **dataset**<br />
+│   ├── testing_tpm.tsv<br />
+│   └── training_tpm.tsv<br />
+├── front.png<br />
+├── main.py<br />
+├── model.py<br />
+├── **pre_trained**<br />
+│   └── ChrNet.hdf5<br />
+├── README.md<br />
+└── **reference**<br />
+    └── hg19.sorted.bed<br />
 
 `data.py`: Storing all functions and tools.
 `dataset`: Storing training and testing set.
