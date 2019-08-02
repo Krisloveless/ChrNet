@@ -1,1 +1,1 @@
-The dataset will be publicly available after the publication is accepted.
+The dataset will be public available after the publication is accepted.
