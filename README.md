@@ -1,5 +1,4 @@
-# ChrNet: A chromosome-based 1D convolutional neural network for predicting immune cell types in breast cancer
-
+# ChrNet: A chromosome-based 1D convolutional neural network for predicting immune cell types 
 ![front image](https://raw.githubusercontent.com/Krisloveless/ChrNet/master/front.png)
 
 This repository is hosting the source code for Keras-based machine learning model **ChrNet**, which stands for Chromosome-based 1D-CNN network.
