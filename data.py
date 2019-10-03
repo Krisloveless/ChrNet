@@ -9,7 +9,7 @@ import random
 from IntegratedGradients import *
 
 input_sequence = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', 'X', 'Y']
-dict_label = {"B cells":0,"CD14+ Monocytes":1,"CD4 T cells":2,"CD8 T cells":3,"Dendritic cells":4,"NK cells":5,"Other":6}
+dict_label = {"B cells":0,"CD14+ Monocytes":1,"CD4+ T cells":2,"CD8+ T cells":3,"Dendritic cells":4,"NK cells":5,"Other":6}
 
 def out_label():
     """Return the inital labels
@@ -199,8 +199,6 @@ def pickle_predict(df,reference_bed,model,out_name,dataframe=False,score=False,t
             res_index = [np.argmax(i) for i in res]
             with open(out_name,"wb") as w:
                 pickle.dump({"true_label":t_y,"predict_label":res_index},w)
-
-
 
 if __name__ == '__main__':
     pass
