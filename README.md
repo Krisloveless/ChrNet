@@ -17,16 +17,16 @@ The default output cell types are:
 <pre>
 .
 ├── data.py              
-├── **dataset**
+├── dataset/
 │   ├── testing_tpm.tsv
 │   └── training_tpm.tsv
 ├── front.png
 ├── main.py
 ├── model.py
-├── **pre_trained**
+├── pre_trained/
 │   └── ChrNet.hdf5
 ├── README.md
-└── **reference**
+└── reference/
     └── hg19.sorted.bed
 </pre>
 `data.py`: Storing all functions and tools.<br />
