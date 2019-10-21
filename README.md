@@ -18,6 +18,11 @@ The default output cell types are:
 We accept customized output cell types for retraining. In `data.py`, change the variable *dict_label* to your own
 dictionary labels to alter the cell type output.
 
+### Other functions
+
+Our IntegratedGradients function was acquired from [here](https://github.com/hiranumn/IntegratedGradients). findMetaFeature followed the procedure from [**Improving interpretability of deep learning models: splicing codes as a case study**](https://www.biorxiv.org/content/10.1101/700096v1) -- Anupama Jha, Joseph K. Aicher, Deependra Singh, Yoseph Barash, 2019.
+
+
 ### File struct
 <pre>
 .
@@ -28,6 +33,7 @@ dictionary labels to alter the cell type output.
 ├── front.png
 ├── main.py
 ├── model.py
+├── IntegratedGradients.py
 ├── pre_trained/
 │   └── ChrNet.hdf5
 ├── README.md
