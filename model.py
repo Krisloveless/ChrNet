@@ -5,7 +5,8 @@ from keras.utils.vis_utils import plot_model
 
 def ChrNet(pretrained_weights = None):
     input_sequence = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', 'X', 'Y']
-    #here chr_list is initalized according to hg19.sorted.bed
+    # here chr_list is initalized according to hg19.sorted.bed
+    # gene size is here; if using another version of reference please change the size of each chromosome
     chr_list = [3203, 2205, 1730, 1364, 1658, 1636, 1431, 1335, 1239, 1267, 1921, 1718, 612, 1099, 1075, 1486, 1873, 645, 2031, 829, 462, 703, 1062, 112]
     multi_inputs = [Input((i,1)) for i in chr_list]
     tmp = [None] * len(input_sequence)

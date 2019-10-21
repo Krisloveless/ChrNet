@@ -5,10 +5,14 @@ from keras.callbacks import ModelCheckpoint,CSVLogger
 import pickle
 
 def save(name,c_object):
+    """Save the weight of TrainBatchGenerator to pkl object.
+    """
     with open(name,"wb") as saving:
         pickle.dump(c_object,saving)
 
 def load(name):
+    """Load the weight of TrainBatchGenerator from pkl object.
+    """
     with open(name,"rb") as loading:
         res = pickle.load(loading)
     return res

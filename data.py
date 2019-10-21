@@ -7,17 +7,21 @@ import pickle
 from keras.utils import to_categorical
 import random
 from IntegratedGradients import *
+from itertools import chain
+from scipy import stats
+from statsmodels.stats.multitest import multipletests
 
 input_sequence = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', 'X', 'Y']
+# dict_label can be changed here for customized training
 dict_label = {"B cells":0,"CD14+ Monocytes":1,"CD4+ T cells":2,"CD8+ T cells":3,"Dendritic cells":4,"NK cells":5,"Other":6}
 
 def out_label():
-    """Return the inital labels
+    """Return the inital labels.
     """
     return dict_label
 
 def process_reference(reference_bed):
-    """process the reference bed file, if altered also please
+    """Process the reference bed file, if altered also please
     change the model.py chr_list, input a reference such as
     hg19.sorted.bed.
     """
@@ -57,7 +61,7 @@ class Generator(Sequence):
             np.random.shuffle(self.indices)
 
 def Ten_fold_validation_split(training_path):
-    """split a tsv file with gene by sample to 10 folds and
+    """Split a tsv file with gene by sample to 10 folds and
     save with pickle.
     """
     print("reading tsv")
@@ -139,7 +143,10 @@ def TrainBatchGenerator(batch_size,training_path,reference_bed,categorical=False
     """Initalize the parameters with batch_size, dataframe directory,
     reference_bed directory. If categorical, the value is converted to
     y to one-hot vectors. If number, the first `number` of set inputted
-    will be applied to fit_generator.
+    will be applied to fit_generator. Input training file should be
+    a tsv file where rows should be cells and columns should be genes
+    , first column indicating the cell type and first row indicating gene
+    name (Ensembl ID).
     """
     print("processing labels")
     dict_label = out_label()
@@ -154,7 +161,6 @@ def TrainBatchGenerator(batch_size,training_path,reference_bed,categorical=False
     print("splitting df")
     df_train,df_validation = split_df(training_set,percentage=0.9)
     print("reordering")
-    #pdb.set_trace()
     t_x,t_y = reorder(df_train,dict_reference,dict_label)
     v_x,v_y = reorder(df_validation,dict_reference,dict_label)
     if categorical:
@@ -166,9 +172,11 @@ def pickle_predict(df,reference_bed,model,out_name,dataframe=False,score=False,t
     """Predict with the trained model. The file will be named
      `out_name`. If dataframe, the prediction will be output of
      csv and a pickle file (both containing the same result, a
-     pickle file for a quicker input to python). Else, if score,
-     the prediction score will be provided. Else, the real labels
-     will be provided.
+     pickle file for a quicker input to python). If score,
+     the prediction score will be provided. If test, the real labels
+     will be provided. Input file should be a tsv file or pkl a pkl
+     that is holding a pandas dataframe where rows should be cells
+     and columns should be genes.
     """
     print("processing labels")
     dict_label = out_label()
@@ -199,6 +207,108 @@ def pickle_predict(df,reference_bed,model,out_name,dataframe=False,score=False,t
             res_index = [np.argmax(i) for i in res]
             with open(out_name,"wb") as w:
                 pickle.dump({"true_label":t_y,"predict_label":res_index},w)
+
+def IG_reorder(input_batch):
+    """A function for reordering into the right reorder
+    that is accepted by intergrated gradients.
+    """
+    out = []
+    samples = input_batch[0].shape[0]
+    for i in range(samples):
+        tmp = []
+        for j in input_batch:
+            tmp.append(j[i,:,:])
+        out.append(tmp)
+    return out
+
+def pickle_predict_with_IG(df,reference_bed,model,out_name):
+    """Prediction with intergrated gradients. Input should be a
+    tsv or a pkl that is holding a pandas dataframe. Output csv
+    is the prediction result, while pkl file is the attribute of
+    different cell types.
+    """
+    print("processing labels")
+    dict_label = out_label()
+    print("reading csv")
+    t_y = None
+    if df.endswith("tsv"):
+        out = pd.read_csv(df,sep="\t",header=0,index_col=0)
+    elif df.endswith("pkl"):
+        out = pd.read_pickle(df)
+    else:
+        raise Exception("Not a valid tsv or pkl file")
+    print("processing reference")
+    dict_reference = process_reference(reference_bed)
+    t_x,t_y = reorder(out,dict_reference,dict_label,test=True)
+    batch_x = [t_x[i].reshape(t_x[i].shape[0],-1,1) for i in range(len(t_x))]
+    res = model.predict_on_batch(batch_x)
+    ig = integrated_gradients(model)
+    res_index = [np.argmax(i) for i in res]
+    IG_batch = IG_reorder(batch_x)
+    attribute = [ig.explain(i) for i in IG_batch]
+    barcode = t_y
+    pl = res_index
+    value = pd.DataFrame(np.array(barcode,dtype=object).reshape(-1,1))
+    prediction = pd.DataFrame(np.array(pl,dtype=object).reshape(-1,1))
+    conout = pd.concat([value,prediction],axis=1)
+    conout.columns = ["","Cluster"]
+    name = os.path.split(out_name)[1].split(".")[0]
+    # csv output here
+    conout.to_csv("{}.csv".format(name),index=False)
+    # resout is sample x gene
+    genes = [i.shape[0] for i in attribute[0]]
+    resout = np.zeros((len(attribute),sum(genes)))
+    resout = pd.DataFrame(resout)
+    tmp = [dict_reference[i] for i in input_sequence]
+    colnames = [i for i in chain(*tmp)]
+    resout.columns = colnames
+    resout.index = barcode
+    for i in range(len(attribute)):
+        tmp = [j[0] for j in chain(*(attribute[i]))]
+        resout.iloc[i,] = tmp
+    resout.to_pickle("{}_attribute.pkl".format(out_name))
+
+def findMetaFeature(pkl,cluster_csv,out_name,classes=7):
+    """Find the metafeatures from the model in each of the
+    cell types. Input should be output files from
+    pickle_predict_with_IG. classes is the number of class
+    for the model, default is 7.
+    """
+    data = pd.read_pickle(pkl)
+    reference = pd.read_csv(cluster_csv,header=0,index_col=0)
+    label = reverse_label()
+    for i in range(classes):
+        outname = "".join(label[i].split(" "))
+        current_index = reference[reference["Cluster"] == i].index
+        none_index = reference[reference["Cluster"] != i].index
+        G_set = abs(data.loc[current_index])
+        R_set = abs(data.loc[none_index])
+        gene_name_all = data.columns
+        MetaName = []
+        Pval = []
+        for j in range(G_set.shape[1]):
+            G_set_single = G_set.iloc[:,j].tolist()
+            R_set_single = R_set.iloc[:,j].tolist()
+            if G_set_single == R_set_single:
+                continue
+            P_out = stats.ttest_ind(G_set_single,R_set_single, equal_var=True).pvalue
+            if np.isnan(P_out):
+                continue
+            MetaName.append(gene_name_all[j])
+            # two side to one side check for null hypothesis
+            P_out = P_out / 2
+            Pval.append(P_out)
+        if len(Pval) == 0:
+            continue
+        p_adjusted = multipletests(Pval, alpha=0.05, method='fdr_bh')
+        p_adj_value = p_adjusted[1]
+        sig = {}
+        #print(label[i],":",len(p_adjusted[0][p_adjusted[0]==True]))
+        for j in range(len(p_adjusted[0])):
+            if p_adjusted[0][j]:
+                sig[MetaName[j]] = p_adj_value[j]
+        with open("{}_{}_Meta.pkl".format(out_name,outname),"wb") as pkl:
+            pickle.dump(sig,pkl)
 
 if __name__ == '__main__':
     pass
