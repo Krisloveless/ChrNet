@@ -268,7 +268,7 @@ def pickle_predict_with_IG(df,reference_bed,model,out_name):
         resout.iloc[i,] = tmp
     resout.to_pickle("{}_attribute.pkl".format(out_name))
 
-def findMetaFeature(pkl,cluster_csv,out_name,classes=7):
+def findMetaFeature(pkl,cluster_csv,out_name,classes=len(dict_label)):
     """Find the metafeatures from the model in each of the
     cell types. Input should be output files from
     pickle_predict_with_IG. classes is the number of class
