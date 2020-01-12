@@ -17,13 +17,13 @@ def load(name):
         res = pickle.load(loading)
     return res
 
-def run(weight=None,cpu=False):
+def run(training_set_path,reference,weight=None,cpu=False):
     if cpu:
         os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
         #force cpu
         os.environ["CUDA_VISIBLE_DEVICES"]=""
     # gather the training and validation set.
-    train,validation = TrainBatchGenerator(40,"./dataset/training_tpm.tsv","./reference/hg19.sorted.bed")
+    train,validation = TrainBatchGenerator(40,training_set_path,reference)
     model = ChrNet()
     # the generators can be save and load for reuse propose.
     #save("training.pkl",train)
@@ -43,5 +43,5 @@ def predict(file,model_path,reference,outname,cpu=False):
     pickle_predict(file,reference,model,outname)
 
 if __name__ == '__main__':
-    run()
+    run("./dataset/training_tpm.tsv","./reference/hg19.sorted.bed")
     #predict(".dataset/testing_tpm.tsv","./pre_trained/ChrNet.hdf5","./reference/hg19.sorted.bed","ChrNet_prediction",cpu=True)
